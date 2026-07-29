@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "react-router": "^8.0.1",
+    "saas": "^1.0.0"
+  }
+  ,
+  "scripts": {
+    "dev": "vite"
+  }
+
+}
