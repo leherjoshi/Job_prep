@@ -1,6 +1,6 @@
-const moongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-const userSchema = new moongoose.Schema({
+const userSchema = new mongoose.Schema({
   username :{
     type:String,
     unique:[true,"Username already exists"],
@@ -19,6 +19,6 @@ const userSchema = new moongoose.Schema({
 
 })
 
-const userModel = moongoose.model("users",userSchema);
+const userModel = mongoose.model("users",userSchema);
 
 module.exports =userModel;

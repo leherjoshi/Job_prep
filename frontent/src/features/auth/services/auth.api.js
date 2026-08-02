@@ -1,14 +1,10 @@
 import axios from "axios";
-//to use directlu axios without creating instance
-// axios.create({
-//   baseURL: "http://localhost:3000",
-//   withCredentials: true
-// });
+import { API_URL } from "../../../config/api";
 
 export async function register({ username, email, password }) {
   try {
     const response = await axios.post(
-      "http://localhost:3000/api/auth/register",
+      `${API_URL}/api/auth/register`,
       {
         username,
         email,
@@ -29,7 +25,7 @@ export async function register({ username, email, password }) {
 export async function login({ email, password }) {
   try {
     const response = await axios.post(
-      "http://localhost:3000/api/auth/login",
+      `${API_URL}/api/auth/login`,
       {
         email,
         password,
@@ -48,9 +44,8 @@ export async function login({ email, password }) {
 
 export async function logout() {
   try {
-    const response = await axios.post(
-      "http://localhost:3000/api/auth/logout",
-      {},
+    const response = await axios.get(
+      `${API_URL}/api/auth/logout`,
       {
         withCredentials: true,
       }
@@ -64,7 +59,7 @@ export async function logout() {
 }
 export async function getme() {
   try {
-    const response = await axios.get("http://localhost:3000/api/auth/get-me", {
+    const response = await axios.get(`${API_URL}/api/auth/get-me`, {
       withCredentials: true,
     });
 

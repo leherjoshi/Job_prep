@@ -43,7 +43,15 @@ async function registerUserController(req,res){
     expiresIn:"1d"
   })
 
-  res.cookie("token",token)
+  // Cookie options for production
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Required for cross-origin
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  };
+
+  res.cookie("token", token, cookieOptions)
 
   return res.status(201).json({
     success:true,
@@ -105,7 +113,15 @@ async function registerUserController(req,res){
       expiresIn:"1d"
     })
 
-    res.cookie("token",token)
+    // Cookie options for production
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Required for cross-origin
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    };
+
+    res.cookie("token", token, cookieOptions)
 
     return res.status(200).json({
       success:true,

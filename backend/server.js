@@ -9,11 +9,12 @@ const {generateInterviewReport}=require("./src/services/ai.service")
 
 connectDB();
 
-generateInterviewReport({resume,selfDescription,jobDescription}).then((report)=>{
-  console.log("Interview Report:", report);
-}).catch((error)=>{
-  console.error("Error generating interview report:", error);
-});
+// Test code - comment out to avoid errors on startup
+// generateInterviewReport({resume,selfDescription,jobDescription}).then((report)=>{
+//   console.log("Interview Report:", report);
+// }).catch((error)=>{
+//   console.error("Error generating interview report:", error);
+// });
 
 //invokeGeminiAi() ;
 app.listen(3000, () => {

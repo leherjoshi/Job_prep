@@ -37,16 +37,14 @@ const mongoose =require('mongoose');
 
 const technicalQuestionSchema = new mongoose.Schema({
   question: { type: String },
-  intension: { type: String },
+  intention: { type: String },
   answer: { type: String },
-  feedback: { type: String },
 }, { _id: false });
 
 const behavioralQuestionSchema = new mongoose.Schema({
   question: { type: String },
-  intension: { type: String },
+  intention: { type: String },
   answer: { type: String },
-  feedback: { type: String },
 }, { _id: false });
 
 const skillGapSchema = new mongoose.Schema({
@@ -63,20 +61,24 @@ const skillGapSchema = new mongoose.Schema({
 
 const preparationPlanSchema = new mongoose.Schema({
   day: {
-    type: String,   // Gemini returns "Monday", "Day 1" etc — not a Number
+    type: Number,
     required: [true, "Day is required"]
   },
   focus: {
     type: String,
     required: [true, "Focus is required"]
   },
-  task: {
-    type: String,
-    required: [true, "Task is required"]
+  tasks: {
+    type: [String],
+    required: [true, "Tasks are required"]
   }
 }, { _id: false });
 
 const interviewReportSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: false  // Made optional since AI might not always provide it
+  },
   jobDescription: {
     type: String,
     required: [true, "Job description is required"]
@@ -87,8 +89,8 @@ const interviewReportSchema = new mongoose.Schema({
   selfDescription: {
     type: String,
   },
-  matchMedia: {
-    type: String,
+  matchScore: {
+    type: Number,
   },
   overallFeedback: {
     type: String,

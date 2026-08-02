@@ -10,9 +10,16 @@ export const AuthProvider = ({ children }) => {
   useEffect(()=>{
     const getAndSendUser=async() =>
     {
-      const data =await getme()
-      setUser(data.user)
-      setLoading(false)
+      try {
+        const data = await getme()
+        setUser(data.user)
+      } catch (error) {
+        // User is not authenticated, that's okay
+        console.log("User not authenticated")
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
     getAndSendUser();
   },[])

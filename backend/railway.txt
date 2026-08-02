@@ -1,0 +1,22 @@
+Railway Configuration
+=====================
+
+For Railway deployment, you don't need a config file.
+Just follow these steps:
+
+1. Connect your GitHub repository to Railway
+2. Railway will auto-detect Node.js
+3. Add environment variables in Railway dashboard:
+   - NODE_ENV=production
+   - MONGO_URL=your-mongodb-connection-string
+   - JWT_SECRET=your-jwt-secret
+   - GOOGLE_GEN_AI_KEY=your-google-api-key
+   - FRONTEND_URL=your-frontend-url
+   - PORT=3000
+
+4. Railway will automatically:
+   - Run npm install
+   - Run npm start
+   - Assign a public URL
+
+Start Command: npm start
