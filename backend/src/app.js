@@ -33,6 +33,29 @@ const authRouter=require("./routes/auth.routes");
 const interviewRouter=require("./routes/interview.routes");
 const mockInterviewRouter=require("./routes/mockInterview.routes");
 
+// Health check endpoint
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "Interview AI API is running",
+        version: "1.0.0",
+        endpoints: {
+            auth: "/api/auth",
+            interview: "/api/interview",
+            mockInterview: "/api/mock-interview"
+        }
+    });
+});
+
+// API health check
+app.get("/api/health", (req, res) => {
+    res.json({
+        success: true,
+        status: "healthy",
+        timestamp: new Date().toISOString()
+    });
+});
+
 // use the routes here
 app.use("/api/auth",authRouter);
 app.use("/api/interview",interviewRouter);
