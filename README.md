@@ -1,4 +1,4 @@
-# Interview AI - Your Personal Interview Coach
+# InterviewForge – Adversarial Interview Preparation Engine
 
 Ever felt unprepared walking into an interview? I built this to fix that.
 
