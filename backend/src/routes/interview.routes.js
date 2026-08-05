@@ -12,6 +12,12 @@ const upload = require("../middlewares/file.middleware");
 interviewRouter.post(
   "/",
   authMiddleware.authUser,
+  (req, res, next) => {
+    console.log('=== Create Report Route Matched ===');
+    console.log('URL:', req.url);
+    console.log('Method:', req.method);
+    next();
+  },
   upload.single("resume"),
   interviewController.generateInterviewReportController
 );
@@ -46,6 +52,13 @@ interviewRouter.get(
 interviewRouter.post(
   "/resume/pdf/:interviewReportId",
   authMiddleware.authUser,
+  (req, res, next) => {
+    console.log('=== PDF Route Matched ===');
+    console.log('URL:', req.url);
+    console.log('Params:', req.params);
+    console.log('Method:', req.method);
+    next();
+  },
   interviewController.generateResumePdfController
 );
 
