@@ -133,12 +133,87 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
   let PDFDocument;
   
   try {
-    console.log('=== PDF Generation Started ===');
+    console.log('=== AI-Powered Resume Generation Started ===');
     console.log('Resume length:', resume?.length || 0);
     console.log('Self description length:', selfDescription?.length || 0);
     console.log('Job description length:', jobDescription?.length || 0);
     
-    // Try to load PDFKit
+    // Step 1: Generate tailored resume content using AI
+    console.log('Step 1: Generating ATS-friendly resume with AI...');
+    
+    const resumePrompt = `You are an expert resume writer. Create a professional, ATS-friendly resume tailored to the job description.
+
+ORIGINAL RESUME:
+${resume}
+
+CANDIDATE DESCRIPTION:
+${selfDescription || "Not provided"}
+
+TARGET JOB DESCRIPTION:
+${jobDescription}
+
+Create a tailored resume that:
+1. Highlights relevant experience and skills for this specific job
+2. Uses keywords from the job description naturally
+3. Is ATS-friendly (simple formatting, clear sections)
+4. Emphasizes achievements with metrics where possible
+5. Sounds professional and human-written (not AI-generated)
+6. Is concise (1-2 pages worth of content)
+
+Return ONLY valid JSON in this format:
+{
+  "name": "Candidate Full Name",
+  "email": "email@example.com",
+  "phone": "+1234567890",
+  "location": "City, State",
+  "summary": "2-3 sentence professional summary tailored to the job",
+  "skills": ["Skill 1", "Skill 2", "Skill 3", "..."],
+  "experience": [
+    {
+      "title": "Job Title",
+      "company": "Company Name",
+      "duration": "Jan 2020 - Present",
+      "achievements": ["Achievement 1 with metrics", "Achievement 2", "..."]
+    }
+  ],
+  "education": [
+    {
+      "degree": "Degree Name",
+      "institution": "University Name",
+      "year": "2020",
+      "details": "GPA, honors, etc."
+    }
+  ],
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Brief description",
+      "technologies": ["Tech 1", "Tech 2"],
+      "highlights": ["Key achievement 1", "Key achievement 2"]
+    }
+  ]
+}`;
+
+    const aiResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: resumePrompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    console.log('✓ AI response received');
+    const resumeData = JSON.parse(aiResponse.text);
+    console.log('✓ Resume data parsed:', {
+      hasName: !!resumeData.name,
+      skillsCount: resumeData.skills?.length || 0,
+      experienceCount: resumeData.experience?.length || 0,
+      projectsCount: resumeData.projects?.length || 0
+    });
+    
+    // Step 2: Generate PDF using PDFKit
+    console.log('Step 2: Creating PDF with PDFKit...');
+    
     try {
       PDFDocument = require('pdfkit');
       console.log('✓ PDFKit loaded successfully');
@@ -149,16 +224,13 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
     
     const doc = new PDFDocument({
       size: 'A4',
-      margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      margins: { top: 40, bottom: 40, left: 50, right: 50 }
     });
     console.log('✓ PDF document created');
 
     const chunks = [];
     
-    // Collect PDF data
-    doc.on('data', chunk => {
-      chunks.push(chunk);
-    });
+    doc.on('data', chunk => chunks.push(chunk));
     
     const pdfPromise = new Promise((resolve, reject) => {
       doc.on('end', () => {
@@ -173,61 +245,175 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
 
     console.log('Adding content to PDF...');
     
-    // Add content to PDF
-    doc.fontSize(20).fillColor('#dc2626').text('Interview Report', { align: 'center' });
-    doc.moveDown();
-    
-    doc.fontSize(12).fillColor('#000000');
-    
-    // Job Description
-    if (jobDescription) {
-      doc.fontSize(14).fillColor('#dc2626').text('Job Description', { underline: true });
+    // Helper function to add section header
+    const addSectionHeader = (title) => {
+      doc.fontSize(14)
+         .fillColor('#2563eb')
+         .text(title.toUpperCase(), { underline: false });
+      doc.moveDown(0.3);
+      doc.moveTo(doc.x, doc.y)
+         .lineTo(doc.page.width - 50, doc.y)
+         .strokeColor('#2563eb')
+         .lineWidth(1)
+         .stroke();
       doc.moveDown(0.5);
-      const jobText = String(jobDescription).substring(0, 500);
-      doc.fontSize(10).fillColor('#000000').text(jobText);
-      doc.moveDown();
-      console.log('✓ Added job description');
+      doc.fillColor('#000000');
+    };
+    
+    // Header - Name and Contact
+    doc.fontSize(24)
+       .fillColor('#1e293b')
+       .text(resumeData.name || 'Your Name', { align: 'center' });
+    doc.moveDown(0.3);
+    
+    // Contact info
+    doc.fontSize(10)
+       .fillColor('#64748b')
+       .text(
+         [resumeData.email, resumeData.phone, resumeData.location].filter(Boolean).join(' | '),
+         { align: 'center' }
+       );
+    doc.moveDown(1.5);
+    
+    // Professional Summary
+    if (resumeData.summary) {
+      addSectionHeader('Professional Summary');
+      doc.fontSize(10)
+         .fillColor('#374151')
+         .text(resumeData.summary, { align: 'justify' });
+      doc.moveDown(1);
     }
     
-    // Self Description
-    if (selfDescription) {
-      doc.fontSize(14).fillColor('#dc2626').text('Your Profile', { underline: true });
-      doc.moveDown(0.5);
-      doc.fontSize(10).fillColor('#000000').text(String(selfDescription));
-      doc.moveDown();
-      console.log('✓ Added self description');
+    // Skills
+    if (resumeData.skills && resumeData.skills.length > 0) {
+      addSectionHeader('Technical Skills');
+      doc.fontSize(10)
+         .fillColor('#374151')
+         .text(resumeData.skills.join(' • '), { align: 'left' });
+      doc.moveDown(1);
     }
     
-    // Resume Summary
-    if (resume) {
-      doc.fontSize(14).fillColor('#dc2626').text('Resume Summary', { underline: true });
-      doc.moveDown(0.5);
-      const resumeText = String(resume).substring(0, 1000) + '...';
-      doc.fontSize(10).fillColor('#000000').text(resumeText);
-      doc.moveDown();
-      console.log('✓ Added resume summary');
+    // Experience
+    if (resumeData.experience && resumeData.experience.length > 0) {
+      addSectionHeader('Professional Experience');
+      
+      resumeData.experience.forEach((exp, index) => {
+        doc.fontSize(11)
+           .fillColor('#1e293b')
+           .text(exp.title, { continued: true })
+           .fontSize(10)
+           .fillColor('#64748b')
+           .text(` | ${exp.company}`, { continued: false });
+        
+        doc.fontSize(9)
+           .fillColor('#64748b')
+           .text(exp.duration);
+        doc.moveDown(0.3);
+        
+        if (exp.achievements && exp.achievements.length > 0) {
+          exp.achievements.forEach(achievement => {
+            doc.fontSize(10)
+               .fillColor('#374151')
+               .list([achievement], {
+                 bulletRadius: 2,
+                 indent: 10
+               });
+          });
+        }
+        
+        if (index < resumeData.experience.length - 1) {
+          doc.moveDown(0.8);
+        }
+      });
+      doc.moveDown(1);
+    }
+    
+    // Projects
+    if (resumeData.projects && resumeData.projects.length > 0) {
+      addSectionHeader('Projects');
+      
+      resumeData.projects.forEach((project, index) => {
+        doc.fontSize(11)
+           .fillColor('#1e293b')
+           .text(project.name);
+        
+        if (project.technologies && project.technologies.length > 0) {
+          doc.fontSize(9)
+             .fillColor('#64748b')
+             .text(`Technologies: ${project.technologies.join(', ')}`);
+        }
+        
+        doc.moveDown(0.2);
+        doc.fontSize(10)
+           .fillColor('#374151')
+           .text(project.description);
+        
+        if (project.highlights && project.highlights.length > 0) {
+          doc.moveDown(0.2);
+          project.highlights.forEach(highlight => {
+            doc.fontSize(10)
+               .fillColor('#374151')
+               .list([highlight], {
+                 bulletRadius: 2,
+                 indent: 10
+               });
+          });
+        }
+        
+        if (index < resumeData.projects.length - 1) {
+          doc.moveDown(0.8);
+        }
+      });
+      doc.moveDown(1);
+    }
+    
+    // Education
+    if (resumeData.education && resumeData.education.length > 0) {
+      addSectionHeader('Education');
+      
+      resumeData.education.forEach((edu, index) => {
+        doc.fontSize(11)
+           .fillColor('#1e293b')
+           .text(edu.degree, { continued: true })
+           .fontSize(10)
+           .fillColor('#64748b')
+           .text(` | ${edu.institution}`, { continued: false });
+        
+        doc.fontSize(9)
+           .fillColor('#64748b')
+           .text(edu.year + (edu.details ? ` | ${edu.details}` : ''));
+        
+        if (index < resumeData.education.length - 1) {
+          doc.moveDown(0.5);
+        }
+      });
     }
     
     // Footer
-    doc.fontSize(8).fillColor('#666666').text(
-      'Generated by Interview AI - ' + new Date().toLocaleDateString(),
-      { align: 'center' }
-    );
-    console.log('✓ Added footer');
+    doc.fontSize(8)
+       .fillColor('#94a3b8')
+       .text(
+         `Tailored for: ${jobDescription.substring(0, 60)}... | Generated: ${new Date().toLocaleDateString()}`,
+         50,
+         doc.page.height - 30,
+         { align: 'center', width: doc.page.width - 100 }
+       );
 
+    console.log('✓ All content added to PDF');
+    
     // Finalize PDF
     doc.end();
     console.log('✓ PDF finalized, waiting for buffer...');
     
     const buffer = await pdfPromise;
-    console.log('=== PDF Generation Successful ===');
+    console.log('=== AI-Powered Resume Generation Successful ===');
     return buffer;
   } catch (error) {
-    console.error('=== PDF Generation Failed ===');
+    console.error('=== Resume PDF Generation Failed ===');
     console.error('Error type:', error.constructor.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    throw new Error('Failed to generate PDF: ' + error.message);
+    throw new Error('Failed to generate tailored resume: ' + error.message);
   }
 }
 
