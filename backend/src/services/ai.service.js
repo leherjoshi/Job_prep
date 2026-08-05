@@ -138,7 +138,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }) {
     console.log('Self description length:', selfDescription?.length || 0);
     console.log('Job description length:', jobDescription?.length || 0);
     
-    // Step 1: Generate tailored resume content using AI
+    // Step 1: Generate tailored resume content using AI with retry logic
     console.log('Step 1: Generating ATS-friendly resume with AI...');
     
     const resumePrompt = `You are an expert resume writer. Create a professional, ATS-friendly resume tailored to the job description.
@@ -194,16 +194,70 @@ Return ONLY valid JSON in this format:
   ]
 }`;
 
-    const aiResponse = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: resumePrompt,
-      config: {
-        responseMimeType: "application/json"
+    let resumeData;
+    let aiResponse;
+    
+    // Try with retry logic (max 3 attempts)
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`AI attempt ${attempt}/3...`);
+        aiResponse = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: resumePrompt,
+          config: {
+            responseMimeType: "application/json"
+          }
+        });
+        
+        console.log('✓ AI response received');
+        resumeData = JSON.parse(aiResponse.text);
+        break; // Success, exit retry loop
+        
+      } catch (aiError) {
+        console.error(`Attempt ${attempt} failed:`, aiError.message);
+        
+        // If it's a 503 (high demand) and not last attempt, wait and retry
+        if (aiError.message.includes('503') && attempt < 3) {
+          console.log(`Waiting 2 seconds before retry...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        
+        // If all retries failed, use fallback
+        if (attempt === 3) {
+          console.error('All AI retry attempts failed, using fallback resume format');
+          
+          // Create basic fallback resume data from original resume
+          resumeData = {
+            name: "Your Name",
+            email: "your.email@example.com",
+            phone: "",
+            location: "",
+            summary: selfDescription || "Experienced professional seeking opportunities in the field.",
+            skills: ["Please update with your skills"],
+            experience: [{
+              title: "Your Experience",
+              company: "Company Name",
+              duration: "Date Range",
+              achievements: [
+                "Original resume content follows below:",
+                resume.substring(0, 500) + "..."
+              ]
+            }],
+            education: [{
+              degree: "Your Degree",
+              institution: "Your Institution",
+              year: "Year",
+              details: ""
+            }],
+            projects: []
+          };
+          
+          console.log('⚠️ Using fallback resume format - AI service unavailable');
+          break;
+        }
       }
-    });
-
-    console.log('✓ AI response received');
-    const resumeData = JSON.parse(aiResponse.text);
+    }
     console.log('✓ Resume data parsed:', {
       hasName: !!resumeData.name,
       skillsCount: resumeData.skills?.length || 0,
