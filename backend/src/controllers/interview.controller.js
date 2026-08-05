@@ -7,6 +7,16 @@ const interviewReportModel = require("../model/interviewerReport")
  */
 async function generateInterviewReportController(req, res) {
     try {
+        console.log('=== Generate Interview Report Controller ===');
+        console.log('Has file:', !!req.file);
+        console.log('User ID:', req.user?.id);
+        
+        if (!req.file || !req.file.buffer) {
+            return res.status(400).json({ 
+                message: "Resume file is required. Please upload a PDF file." 
+            })
+        }
+        
         const resumeContent = await (new pdfParse.PDFParse(Uint8Array.from(req.file.buffer))).getText()
         
         const { selfDescription, jobDescription } = req.body
@@ -32,6 +42,7 @@ async function generateInterviewReportController(req, res) {
     } catch (err) {
         console.error("Error in generateInterviewReportController:");
         console.error(err.message);
+        console.error(err.stack);
         res.status(500).json({ message: "Failed to generate interview report.", error: err.message })
     }
 }
